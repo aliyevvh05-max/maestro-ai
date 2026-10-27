@@ -1159,23 +1159,28 @@ $('api-save').addEventListener('click', () => {
 /* ---------- init ---------- */
 async function initApp() {
   renderTabs(); renderStyles(); selectStyle(activeStyle);
-  if (location.protocol.startsWith('http')) {
-    try {
-      const h = await fetch('/api/health');
-      if (h.ok) {
-        server = true; $('btn-api').style.display = 'none';
-        const refresh = async () => { try { user = (await api('/me')).user; } catch (e) { user = null; } updateUI(); };
-        await refresh();
-        const params = new URLSearchParams(location.search);
-        if (params.has('checkout')) { history.replaceState(null, '', location.pathname); toast('Checking your payment status…'); setTimeout(refresh, 2500); setTimeout(refresh, 6000); }
-        return;
-      }
-    } catch (e) {}
-    // A hosted website must never silently fall back to fake local renders or test payments.
-    server = true;
-    $('btn-api').style.display = 'none';
-    toast('Maestro server is not responding. Please refresh or contact support.');
-    updateUI();
+  
+  server = true; 
+  $('btn-api').style.display = 'none';
+  
+  const refresh = async () => { 
+    try { 
+      user = (await api('/me')).user; 
+    } catch (e) { 
+      user = null; 
+    } 
+    updateUI(); 
+  };
+  
+  await refresh();
+
+  const params = new URLSearchParams(location.search);
+  if (params.has('checkout') || params.has('google')) {
+    history.replaceState(null, '', location.pathname);
+    await refresh();
+    if (user) toast('Google ilə uğurla daxil oldunuz!');
+  }
+}
     return;
   }
   try {

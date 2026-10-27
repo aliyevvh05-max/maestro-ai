@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAESTRO — Interior Design AI</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Italiana&family=Outfit:wght@300;400;600&family=Playfair+Display:ital,wght@1,500&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+html, body { width: 100%; margin: 0; padding: 0; background-color: #000000; -ms-overflow-style: none; scrollbar-width: none; }
+body { min-height: 900vh; font-family: 'Outfit', sans-serif; color: #ffffff; overflow-x: hidden; cursor: none; }
+* { cursor: none !important; }
+::-webkit-scrollbar { display: none; width: 0; }
+#webgl { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; outline: none; }
+
+/* cursor */
+.cursor-inner { position: fixed; top: 0; left: 0; width: 6px; height: 6px; border: 2px solid #fff; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 9999; }
+.cursor-outer { position: fixed; top: 0; left: 0; width: 40px; height: 40px; border: 1.5px solid rgba(255,255,255,.7); border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 9998; transition: width .3s, height .3s, background .3s; }
+.cursor-outer.hot { width: 64px; height: 64px; background: rgba(255,246,237,.08); }
+
+/* overlay */
+.cinematic-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 0 60px 40px 60px; box-sizing: border-box; }
+.main-header { display: flex; justify-content: space-between; align-items: center; width: 100%; z-index: 20; pointer-events: auto; padding: 20px 0; }
+.brand { font-size: 14px; font-weight: 600; letter-spacing: 5px; text-transform: uppercase; }
+.header-nav { display: flex; align-items: center; gap: 24px; }
+.nav-link { color: #fff; text-decoration: none; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 500; transition: color .3s, opacity .3s; opacity: .85; }
+.nav-link:hover { opacity: 1; }
+.nav-dot { width: 3px; height: 3px; background: rgba(255,255,255,.2); border-radius: 50%; }
+.contact-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 24px; background: #fff; color: #000; text-decoration: none; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; border-radius: 20px; border: 0; font-family: inherit; transition: transform .3s, background .3s; }
+.btn-circle { display: inline-block; width: 6px; height: 6px; border: 1px solid #000; border-radius: 50%; background: transparent; }
+.contact-btn:hover { transform: scale(1.05); background: #f0f0f0; }
+
+/* slides */
+.slide { position: absolute; bottom: 12%; pointer-events: none; }
+#slide-1 { left: 0; width: 100%; }
+#slide-1 .slide-title { margin-left: 60px; }
+#slide-1 .desc-row { position: relative; display: flex; width: 100%; }
+#slide-1 .col-1 { margin-left: 60px; width: calc(25vw - 60px); max-width: calc(25vw - 60px); }
+#slide-1 .col-2 { position: absolute; left: calc(25vw + 40px); width: calc(25vw - 60px); max-width: calc(25vw - 60px); }
+#slide-1 .btn-row { margin-left: 60px; }
+
+#slide-2 { left: 0; width: 100%; }
+#slide-2-img { position: fixed; top: 90px; left: 60px; width: calc(25vw - 60px); aspect-ratio: 1/1; overflow: hidden; z-index: 2; pointer-events: none; clip-path: inset(0 0 100% 0); transition: clip-path 1.8s cubic-bezier(.16,1,.3,1), opacity .8s ease; opacity: 0; }
+#slide-2-img img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.15); transition: transform 1.8s cubic-bezier(.16,1,.3,1); }
+#slide-2-img.active { clip-path: inset(0 0 0 0); opacity: 1; pointer-events: auto; }
+#slide-2-img.active img { transform: scale(1); }
+#slide-2-img.drag { outline: 1px dashed #fff6ed; outline-offset: -10px; }
+#slide-2-img .drop-label { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; text-align: center; background: linear-gradient(transparent, rgba(0,0,0,.75)); }
+#slide-2 .slide-title { margin-left: calc(25vw + 40px); }
+#slide-2 .slide-desc, #slide-2 .btn-row { margin-left: calc(50vw + 20px); width: calc(25vw - 60px); max-width: calc(25vw - 60px); }
+#slide-2 .btn-row { width: auto; max-width: none; }
+
+#slide-3 { left: calc(50vw + 20px); width: calc(50vw - 80px); }
+#slide-3 .slide-title { white-space: nowrap; }
+#slide-3 .slide-desc { max-width: calc(25vw - 20px); }
+
+#slide-4 { left: calc(25% + 40px); width: min(600px, 60vw); }
+
+.slide-title { font-family: 'Italiana', serif; font-size: clamp(44px, min(8vw, 13vh), 116px); line-height: 1.0; font-weight: 400; letter-spacing: 2px; margin-bottom: 20px; color: #fff6ed; }
+.slide-desc { font-size: 16px; line-height: 1.7; font-weight: 300; color: #d1d5db; letter-spacing: .5px; }
+.slide-desc, .reveal { opacity: 0; transform: translateY(30px); transition: opacity .8s cubic-bezier(.25,1,.5,1), transform .8s cubic-bezier(.25,1,.5,1); transition-delay: .4s; }
+.reveal { margin-top: 22px; }
+.slide.active .slide-desc, .slide.active .reveal { opacity: 1; transform: translateY(0); }
+.slide.active .reveal { transition-delay: .6s; }
+.slide-title .char { display: inline-block; opacity: 0; transform: translateY(50px); filter: blur(12px); transition: opacity .8s cubic-bezier(.25,1,.5,1), transform .8s cubic-bezier(.25,1,.5,1), filter .8s cubic-bezier(.25,1,.5,1); }
+.slide.active .slide-title .char { opacity: 1; transform: translateY(0); filter: blur(0); }
+.slide.active { pointer-events: auto; }
+.slide:not(.active) .reveal { pointer-events: none; }
+
+/* interactive controls in Laocoön style */
+.btn-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 11px 24px; background: #fff; color: #000; font: 600 10px 'Outfit', sans-serif; text-transform: uppercase; letter-spacing: 1px; border-radius: 20px; border: 1px solid #fff; transition: transform .3s, background .3s, color .3s; }
+.pill:hover { transform: scale(1.05); background: #f0f0f0; }
+.pill.ghost { background: rgba(0,0,0,.25); color: #fff; border-color: rgba(255,255,255,.35); backdrop-filter: blur(6px); }
+.pill.ghost:hover { background: rgba(255,255,255,.12); }
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip { padding: 9px 18px; border: 1px solid rgba(255,255,255,.28); border-radius: 20px; font: 400 10px 'Outfit', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #fff; background: rgba(0,0,0,.25); transition: all .3s; }
+.chip small { display: block; font-size: 8px; letter-spacing: 1px; opacity: .55; margin-top: 2px; text-transform: none; }
+.chip:hover { border-color: #fff; }
+.chip.active { background: #fff; color: #000; border-color: #fff; }
+.prompt-input { width: 100%; max-width: 520px; background: transparent; border: 0; border-bottom: 1px solid rgba(255,255,255,.3); color: #fff; font: 300 14px 'Outfit', sans-serif; letter-spacing: .5px; padding: 10px 0; outline: none; user-select: text; }
+.prompt-input::placeholder { color: rgba(255,255,255,.4); }
+.prompt-input:focus { border-color: #fff6ed; }
+.render-card { position: relative; width: 100%; height: min(26vh, 240px); overflow: hidden; border: 1px solid rgba(255,255,255,.18); background: #080808; }
+.render-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.render-loader { position: absolute; inset: 0; background: rgba(0,0,0,.88); backdrop-filter: blur(8px); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; }
+.render-loader.on { display: flex; }
+.spinner { width: 34px; height: 34px; border: 1px solid rgba(255,255,255,.2); border-top-color: #fff6ed; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.render-meta { margin-top: 12px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; }
+.render-meta span { display: block; font-size: 10px; letter-spacing: 1px; color: #9ca3af; text-transform: none; margin-top: 3px; }
+
+/* grid */
+.story-dashes { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); display: flex; flex-direction: column; gap: 12px; }
+.story-dash { width: 2px; height: 40px; background: rgba(255,255,255,.15); border-radius: 2px; }
+.story-dash-fill { width: 100%; height: 0%; background: #fff; border-radius: 2px; }
+.grid-horizontal-line { position: fixed; top: 70px; left: 0; right: 0; width: 100%; height: 1px; background: rgba(255,255,255,.12); z-index: 5; pointer-events: none; }
+.grid-lines { position: fixed; top: 0; left: 40px; right: 40px; width: calc(100% - 80px); height: 100vh; display: flex; justify-content: space-between; z-index: 5; pointer-events: none; }
+.grid-line { position: relative; width: 1px; height: 100%; background: rgba(255,255,255,.12); }
+.grid-line:nth-child(3) { margin-top: 70px; height: calc(100vh - 70px); }
+.grid-dot { position: absolute; left: 50%; transform: translate(-50%,-50%); width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.35); box-shadow: 0 0 4px rgba(255,255,255,.15); }
+
+/* modals */
+.modal { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.84); backdrop-filter: blur(14px); display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal.open { display: flex; }
+.modal-box { background: rgba(8,6,4,.92); border: 1px solid rgba(255,255,255,.16); width: 100%; max-width: 380px; padding: 28px; display: flex; flex-direction: column; gap: 18px; max-height: 92vh; }
+.modal-box.wide { max-width: 900px; padding: 0; gap: 0; }
+.modal-head, .modal-foot { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; }
+.modal-box:not(.wide) .modal-head { padding: 0 0 14px; border-bottom: 1px solid rgba(255,255,255,.12); }
+.modal-head { border-bottom: 1px solid rgba(255,255,255,.12); }
+.modal-foot { border-top: 1px solid rgba(255,255,255,.12); font-size: 10px; letter-spacing: 1px; color: #9ca3af; }
+.modal h3 { font-family: 'Italiana', serif; font-weight: 400; font-size: 26px; letter-spacing: 2px; color: #fff6ed; }
+.x-btn { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; font-size: 12px; }
+.x-btn:hover { background: #fff; color: #000; }
+.field label { display: block; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #9ca3af; margin-bottom: 8px; }
+.field select, .field input[type=password] { width: 100%; background: #0a0a0a; border: 1px solid rgba(255,255,255,.2); color: #fff; padding: 11px; font: 300 13px 'Outfit', sans-serif; outline: none; user-select: text; }
+.field input[type=range] { width: 100%; accent-color: #cd7f32; }
+.range-note { display: flex; justify-content: space-between; font-size: 9px; color: #6b7280; margin-top: 4px; }
+.ba-container { position: relative; overflow: hidden; user-select: none; width: 100%; height: min(450px, 60vh); }
+.ba-img-after { position: absolute; top: 0; left: 0; height: 100%; width: 100%; object-fit: cover; }
+.ba-img-before-wrap { position: absolute; top: 0; left: 0; height: 100%; width: 50%; overflow: hidden; z-index: 10; }
+.ba-img-before { height: 100%; width: 100%; object-fit: cover; max-width: none; }
+.ba-slider-line { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff6ed; z-index: 20; box-shadow: 0 0 10px rgba(255,246,237,.7); }
+.ba-slider-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 2px solid #000; display: flex; align-items: center; justify-content: center; color: #000; font-size: 13px; }
+.toast { position: fixed; left: 50%; bottom: 40px; transform: translate(-50%, 20px); background: #fff; color: #000; padding: 12px 26px; border-radius: 20px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; opacity: 0; transition: all .4s; z-index: 200; pointer-events: none; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+@media (max-width: 900px) {
+  .cinematic-container { padding: 0 24px 24px; }
+  .header-nav { display: none; }
+  #slide-1 .slide-title, #slide-1 .col-1, #slide-1 .btn-row { margin-left: 24px; }
+  #slide-1 .col-1 { width: calc(100% - 48px); max-width: none; }
+  #slide-1 .col-2 { display: none; }
+  #slide-2 .slide-title, #slide-2 .slide-desc, #slide-2 .btn-row { margin-left: 24px; width: calc(100% - 48px); max-width: none; }
+  #slide-2-img { left: 24px; top: 84px; width: 38vw; }
+  #slide-3, #slide-4 { left: 24px; width: calc(100% - 48px); }
+  #slide-3 .slide-desc { max-width: none; }
+  .grid-lines { left: 12px; right: 12px; width: calc(100% - 24px); }
+}
+/* ===== Maestro additions ===== */
+.header-actions{display:flex;align-items:center;gap:20px}
+.hbtn{background:none;border:0;color:#fff;font:500 10px 'Outfit',sans-serif;letter-spacing:2px;text-transform:uppercase;opacity:.85;transition:opacity .3s}
+.hbtn:hover{opacity:1}
+@media(max-width:1180px){.header-nav{display:none}}
+#slide-3 .slide-title{font-size:clamp(40px,min(6.5vw,10vh),96px);margin-bottom:12px}
+#slide-3 .slide-desc{max-width:min(520px,40vw)}
+#slide-3 .reveal{margin-top:14px}
+.cat-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;max-width:calc(50vw - 80px)}
+.tab{white-space:nowrap;padding:7px 14px;border:1px solid rgba(255,255,255,.25);border-radius:20px;background:rgba(0,0,0,.3);color:#fff;font:400 9px 'Outfit',sans-serif;letter-spacing:1.5px;text-transform:uppercase;transition:all .3s}
+.tab.active{background:#fff;color:#000;border-color:#fff}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.between{justify-content:space-between}
+.sel{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);color:#fff;padding:9px 10px;font:300 12px 'Outfit',sans-serif;border-radius:10px;outline:none}
+.sel option{background:#0a0a0a}
+.style-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:8px;height:min(19vh,160px);overflow-y:auto;overscroll-behavior:contain;padding-right:4px;margin-top:8px;align-content:start}
+.schip{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.4);color:#fff;font:400 11px 'Outfit',sans-serif;text-align:left;border-radius:10px;transition:all .25s}
+.schip i{width:18px;height:18px;border-radius:50%;flex:none;border:1px solid rgba(255,255,255,.3)}
+.schip:hover{border-color:#fff}
+.schip.active{background:#fff;color:#000}
+.sel-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#d1d5db;margin-top:8px}
+.grow{flex:1;min-width:140px}
+.modal-box.lg{max-width:880px;overflow-y:auto}
+.modal-box{overflow-y:auto}
+.muted{color:#9ca3af;font-size:12px;line-height:1.7;font-weight:300}
+.stack{display:flex;flex-direction:column;gap:14px}
+.err{color:#fca5a5;font-size:11px;min-height:14px}
+.sub{font:400 10px 'Outfit',sans-serif;letter-spacing:3px;text-transform:uppercase;color:#d1d5db;margin:6px 0 -4px}
+.big{font-family:'Italiana',serif;font-size:30px;color:#fff6ed}
+.credit-box{border:1px solid rgba(255,255,255,.25);padding:10px 18px;font-size:11px;letter-spacing:2px;text-transform:uppercase}
+.credit-box b{font:400 26px 'Italiana',serif;margin-right:6px}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.plan{border:1px solid rgba(255,255,255,.18);padding:22px;display:flex;flex-direction:column;gap:10px}
+.plan.hot{border-color:#fff6ed;background:rgba(255,246,237,.05)}
+.plan h4{font:400 10px 'Outfit',sans-serif;letter-spacing:3px;text-transform:uppercase}
+.price{font-family:'Italiana',serif;font-size:44px;color:#fff6ed;line-height:1}
+.plan ul{list-style:none;font-size:12px;color:#d1d5db;line-height:1.9;font-weight:300;flex:1}
+.about-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.about-grid div,.faq div{border:1px solid rgba(255,255,255,.14);padding:16px}
+.about-grid b,.faq b{display:block;font:600 10px 'Outfit',sans-serif;letter-spacing:2px;text-transform:uppercase;color:#fff6ed;margin-bottom:6px}
+.stats{display:flex;gap:26px;flex-wrap:wrap}
+.stats div{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9ca3af}
+.stats span{display:block;font:400 38px 'Italiana',serif;color:#fff6ed;letter-spacing:1px}
+.faq{display:grid;gap:10px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.gcard{position:relative;border:1px solid rgba(255,255,255,.16);overflow:hidden}
+.gcard img{width:100%;height:105px;object-fit:cover;display:block}
+.gmeta{padding:8px 10px;font-size:11px}.gmeta small{display:block;color:#9ca3af;font-size:9px;margin-top:2px}
+.gcard .x-btn{position:absolute;top:6px;right:6px;width:22px;height:22px;font-size:9px;background:rgba(0,0,0,.6)}
+.ordr{font-size:11px;color:#d1d5db;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.modal h3.m-title{font-size:30px}
+@media(max-width:900px){.plans,.about-grid{grid-template-columns:1fr}.cat-tabs{max-width:100%}#slide-3 .slide-desc{max-width:none}}
+.field input[type=text]{width:100%;background:#0a0a0a;border:1px solid rgba(255,255,255,.2);color:#fff;padding:11px;font:300 13px 'Outfit',sans-serif;outline:none;user-select:text}
+.field code{font-size:10px;color:#fff6ed}
+.legal{position:fixed;right:60px;bottom:14px;z-index:11;display:flex;gap:16px}.legal a{font:300 9px Outfit,sans-serif;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);text-decoration:none;transition:color .3s}.legal a:hover{color:#fff}@media(max-width:900px){.legal{right:24px}}
+
+.creator-credit { font-size: 9px; letter-spacing: .12em; opacity: .42; font-weight: 300; text-transform: uppercase; transition: opacity .25s ease; }
+.creator-credit:hover { opacity: .78; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+} }
+</script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "https://maestroai.design/#founder",
+      "name": "Aliyev",
+      "jobTitle": "Founder & Young Tech Entrepreneur",
+      "description": "Young entrepreneur and creator of high-value digital platforms and web applications.",
+      "worksFor": {
+        "@type": "Organization",
+        "name": "MAESTRO AI"
+      },
+      "url": "https://maestroai.design",
+      "knowsAbout": [
+        "Digital Design",
+        "AI Interior Design",
+        "Web Development",
+        "3D Visualization",
+        "UI/UX Design"
+      ]
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://maestroai.design/#organization",
+      "name": "MAESTRO AI",
+      "url": "https://maestroai.design",
+      "founder": {
+        "@type": "Person",
+        "@id": "https://maestroai.design/#founder",
+        "name": "Aliyev"
+      },
+      "description": "AI-powered professional interior design and visualization platform."
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<div class="cursor-inner"></div>
+<div class="cursor-outer"></div>
+
+<div class="cinematic-container">
+  <div class="main-header">
+    <div class="brand">Maestro</div>
+    <nav class="header-nav">
+      <a href="#slide-1" class="nav-link">Overview</a><span class="nav-dot"></span>
+      <a href="#slide-2" class="nav-link">Upload Room</a><span class="nav-dot"></span>
+      <a href="#slide-3" class="nav-link">Style Library</a><span class="nav-dot"></span>
+      <a href="#slide-4" class="nav-link">Render Core</a>
+    </nav>
+    <div class="header-actions">
+      <button class="hbtn" data-open="m-about">About</button>
+      <button class="hbtn" data-open="m-pricing">Pricing</button>
+      <button class="hbtn" id="btn-acct">Sign in</button>
+      <button class="contact-btn" id="btn-api" style="display:none" aria-hidden="true" tabindex="-1">AI Config <span class="btn-circle"></span></button>
+    </div>
+  </div>
+
+  <div class="slide" id="slide-1">
+    <h2 class="slide-title">Maestro <br>Interior AI</h2>
+    <div class="desc-row">
+      <p class="slide-desc col-1">Maestro is an AI interior design studio. Upload a photo of any room and reimagine it in 150+ architectural styles — photorealistic renders in seconds.</p>
+      <p class="slide-desc col-2">Real-time AI rendering, an interactive before / after slider, a private gallery of every generation and flexible credits — from first idea to client-ready visual.</p>
+    </div>
+    <div class="btn-row reveal">
+      <button class="pill" data-go="slide-2">Transform Room →</button>
+      <button class="pill ghost" id="btn-demo">▶ Live Before / After</button>
+      <button class="pill ghost" data-open="m-about">About Maestro</button>
+    </div>
+  </div>
+
+  <div class="slide-image-mask" id="slide-2-img">
+    <input type="file" id="room-file-input" accept="image/*" hidden>
+    <img id="uploaded-room-img" src="https://api.getlayers.ai/storage/v1/object/public/public/assets/laocoon-59f84455c6/1.png" alt="Your room">
+    <div class="drop-label" id="drop-label">Click or drop your room photo</div>
+  </div>
+
+  <div class="slide" id="slide-2">
+    <h2 class="slide-title">Upload <br>Your Space</h2>
+    <p class="slide-desc">Drop a photo of an empty or outdated interior into the frame. Maestro keeps your walls, windows and perspective — wide, daylit corner shots work best.</p>
+    <div class="btn-row reveal">
+      <button class="pill ghost" id="btn-pick">Choose Photo</button>
+      <button class="pill" data-go="slide-3">Proceed to Style →</button>
+    </div>
+  </div>
+
+  <div class="slide" id="slide-3">
+    <h2 class="slide-title">Style Library</h2>
+    <p class="slide-desc">150+ architectural styles in 10 collections. Pick one, set the room and palette, add your own wishes.</p>
+    <div class="reveal">
+      <div class="cat-tabs" id="cat-tabs"></div>
+      <div class="row" style="margin-top:8px">
+        <input class="prompt-input grow" id="style-search" placeholder="Search styles…" style="max-width:none">
+        <select class="sel" id="room-type"></select>
+        <select class="sel" id="palette"></select>
+      </div>
+      <div class="style-grid" id="style-grid"></div>
+      <div class="sel-label" id="sel-label"></div>
+    </div>
+    <div class="reveal row">
+      <input class="prompt-input grow" id="custom-prompt" placeholder="Optional: velvet emerald sofa, warm LED strips…" style="max-width:none">
+      <button class="pill" id="btn-render">Synthesize Render ⚡</button>
+    </div>
+  </div>
+
+  <div class="slide" id="slide-4">
+    <h2 class="slide-title">Render Core</h2>
+    <p class="slide-desc">Your generation, saved to your gallery. Compare it with the original room or export it.</p>
+    <div class="reveal">
+      <div class="render-card">
+        <img id="rendered-output-img" src="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=1200&q=80" alt="Render">
+        <div class="render-loader" id="render-loader"><div class="spinner"></div><div id="loader-text">Neural Diffusion Synthesis…</div></div>
+      </div>
+      <div class="render-meta" id="render-style-title">Style: Japandi<span>Nordic & Calm • 1 credit per render</span></div>
+    </div>
+    <div class="btn-row reveal">
+      <button class="pill" id="btn-compare">Compare ⇆</button>
+      <button class="pill ghost" id="btn-download">Download</button>
+      <button class="pill ghost" id="btn-gallery">My Gallery</button>
+      <button class="pill ghost" id="btn-share">Share</button>
+    </div>
+  </div>
+</div>
+
+<!-- Before / After -->
+<div class="modal" id="ba-modal">
+  <div class="modal-box wide">
+    <div class="modal-head"><h3>Before / After</h3><button class="x-btn" data-close>✕</button></div>
+    <div class="ba-container" id="ba-slider-box">
+      <img id="ba-after-img" class="ba-img-after" src="https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=1200&q=80" alt="After" draggable="false">
+      <div class="ba-img-before-wrap" id="ba-before-wrap"><img id="ba-before-img" class="ba-img-before" src="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80" alt="Before" draggable="false"></div>
+      <div class="ba-slider-line" id="ba-line"><div class="ba-slider-button">⇆</div></div>
+    </div>
+    <div class="modal-foot"><span>Drag the slider: original room ⇄ Maestro render</span><span>MAESTRO</span></div>
+  </div>
+</div>
+
+<!-- About -->
+<div class="modal" id="m-about">
+  <div class="modal-box lg">
+    <div class="modal-head"><h3 class="m-title">About Maestro</h3><button class="x-btn" data-close>✕</button></div>
+    <p class="muted" style="font-size:14px">Maestro is an AI-powered interior design studio. It turns an ordinary photo of a room into a photorealistic redesign while preserving the real architecture — walls, windows, doors and perspective — so what you see is what could actually be built. Designers, real-estate agents, home-owners and renovation teams use it to explore ideas and win approvals faster.</p>
+    <div class="stats"><div><span>150+</span>Design styles</div><div><span>8</span>Room types</div><div><span>7</span>Palettes</div><div><span>1 credit</span>Per render</div></div>
+    <div class="about-grid">
+      <div><b>1 · Upload</b><span class="muted">Drag & drop or choose a photo of any room — empty, outdated or fully furnished.</span></div>
+      <div><b>2 · Choose a style</b><span class="muted">Browse 10 collections from Japandi to Art Deco, set the room type and palette, add a custom prompt.</span></div>
+      <div><b>3 · AI render</b><span class="muted">Your photo and chosen style are processed by Maestro's AI image engine — no keys or setup needed on your side.</span></div>
+      <div><b>4 · Compare & save</b><span class="muted">Slide between before and after, download the result and revisit every generation in your gallery.</span></div>
+    </div>
+    <div class="about-grid">
+      <div><b>Structure-preserving</b><span class="muted">Layout and perspective stay intact; only materials, furniture, light and decor change.</span></div>
+      <div><b>Your own account</b><span class="muted">Sign up, keep credits, and store every generation and payment in the database.</span></div>
+      <div><b>Bring your own engine</b><span class="muted">Connect OpenAI or any Stable Diffusion / ControlNet backend through a simple endpoint.</span></div>
+      <div><b>Flexible credits</b><span class="muted">Pay only for what you render. 1 free AI image for every new Google account.</span></div>
+    </div>
+    <div class="faq">
+      <div><b>Are my photos private?</b><span class="muted">Your photos are sent to Maestro's AI engine only when you press Synthesize, and results are saved in your private gallery. You can delete any generation at any time.</span></div>
+      <div><b>Which formats work?</b><span class="muted">JPG, PNG and WEBP. Photos are optimized to 1024 px on the long side before rendering.</span></div>
+    </div>
+    <div class="btn-row"><button class="pill" data-go="slide-2" data-close>Start Designing →</button></div>
+  </div>
+</div>
+
+<!-- Pricing -->
+<div class="modal" id="m-pricing">
+  <div class="modal-box lg">
+    <div class="modal-head"><h3 class="m-title">Credits & Pricing</h3><button class="x-btn" data-close>✕</button></div>
+    <p class="muted">1 render = 1 credit. Credits never expire. New Google accounts receive 1 free AI image.</p>
+    <div class="plans">
+      <div class="plan"><h4>Starter</h4><div class="price">$9</div><ul><li>20 credits</li><li>All 150+ styles</li><li>Gallery & downloads</li></ul><button class="pill ghost" data-plan="starter" style="justify-content:center">Buy Starter</button></div>
+      <div class="plan hot"><h4>Pro · Popular</h4><div class="price">$29</div><ul><li>100 credits</li><li>All 150+ styles</li><li>Priority rendering</li></ul><button class="pill" data-plan="pro" style="justify-content:center">Buy Pro</button></div>
+      <div class="plan"><h4>Studio</h4><div class="price">$49</div><ul><li>500 credits</li><li>For agencies & teams</li><li>Best price per render</li></ul><button class="pill ghost" data-plan="studio" style="justify-content:center">Buy Studio</button></div>
+    </div>
+    <p class="muted" id="pay-mode"></p>
+  </div>
+</div>
+
+<!-- Account -->
+<div class="modal" id="m-account">
+  <div class="modal-box lg">
+    <div class="modal-head"><h3 class="m-title">Account</h3><button class="x-btn" data-close>✕</button></div>
+    <div id="acct-body" class="stack"></div>
+  </div>
+</div>
+
+<!-- Checkout (test mode) -->
+<div class="modal" id="m-pay">
+  <div class="modal-box">
+    <div class="modal-head"><h3>Checkout</h3><button class="x-btn" data-close>✕</button></div>
+    <div id="pay-sum" class="muted"></div>
+    <form id="pay-form" class="stack">
+      <input class="prompt-input" name="cn" placeholder="Cardholder name" required>
+      <input class="prompt-input" id="cc" placeholder="Card number" inputmode="numeric" maxlength="19" required>
+      <div class="row"><input class="prompt-input grow" id="cexp" placeholder="MM/YY" maxlength="5" required><input class="prompt-input grow" id="ccvc" placeholder="CVC" maxlength="4" required></div>
+      <div class="err" id="pay-err"></div>
+      <button class="pill" id="pay-btn" style="justify-content:center">Pay</button>
+    </form>
+    <p class="muted">Test mode — no real charge. Use 4242 4242 4242 4242. Add Stripe links in AI Config for live payments.</p>
+  </div>
+</div>
+
+<!-- AI & payments config -->
+<div class="modal" id="api-modal">
+  <div class="modal-box">
+    <div class="modal-head"><h3>AI & Payments</h3><button class="x-btn" data-close>✕</button></div>
+    <div class="field"><label>Render engine</label>
+      <select id="api-provider">
+        <option value="demo">Preview mode (built-in, no key)</option>
+        <option value="openai">OpenAI gpt-image-2 (your API key)</option>
+        <option value="custom">Custom backend (SDXL / ControlNet / Replicate)</option>
+      </select></div>
+    <div class="field"><label>API key / token</label><input type="password" id="api-token" placeholder="sk-… or backend token"></div>
+    <div class="field"><label>Custom endpoint URL</label><input type="text" id="api-endpoint" placeholder="https://your-server.com/render"></div>
+    <div class="field"><label>Structure strength</label><input type="range" id="api-range" min="1" max="100" value="85"><div class="range-note"><span>Creative</span><span id="api-range-val">Strict (85%)</span></div></div>
+    <div class="field"><label>Stripe Payment Links (optional)</label>
+      <input type="text" id="st-starter" placeholder="Starter link https://buy.stripe.com/…" style="margin-bottom:6px">
+      <input type="text" id="st-pro" placeholder="Pro link" style="margin-bottom:6px">
+      <input type="text" id="st-studio" placeholder="Studio link"></div>
+    <p class="muted">Stripe: set each link's success redirect to <code>this-page-url?paid=starter&amp;sid={CHECKOUT_SESSION_ID}</code> (pro / studio likewise).</p>
+    <button class="pill" id="api-save" style="justify-content:center">Save</button>
+  </div>
+</div>
+
+<div class="legal"><span class="creator-credit">Created by Aliyev</span><a href="https://www.instagram.com/maestro.ai.design/" target="_blank" rel="noopener noreferrer" aria-label="Maestro AI on Instagram">Instagram</a><a href="mailto:maestroaisupport@gmail.com">Support</a><a href="terms.html" target="_blank" rel="noopener">Terms</a><a href="privacy.html" target="_blank" rel="noopener">Privacy</a><a href="refund.html" target="_blank" rel="noopener">Refunds</a></div>
+<div class="toast" id="toast"></div>
+
+<div class="grid-horizontal-line"></div>
+<div class="grid-lines">
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line"><div class="grid-dot top"></div><div class="grid-dot bottom"></div></div>
+  <div class="grid-line story-progress-container">
+    <div class="grid-dot top"></div><div class="grid-dot bottom"></div>
+    <div class="story-dashes">
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-1"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-2"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-3"></div></div>
+      <div class="story-dash"><div class="story-dash-fill" id="dash-fill-4"></div></div>
+    </div>
+  </div>
+</div>
+
+<canvas id="webgl"></canvas>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+const ASSET_BASE_URL = "https://api.getlayers.ai/storage/v1/object/public/public/assets/laocoon-59f84455c6";
+
+const canvas = document.querySelector('#webgl');
+let scene, camera, renderer, gltfModel, modelPivot, mixer;
+const clock = new THREE.Clock();
+let currentScroll = 0;
+let mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
+let cursorX = innerWidth / 2, cursorY = innerHeight / 2;
+let outerCursorX = innerWidth / 2, outerCursorY = innerHeight / 2;
+let bgMaterial;
+const shaderUniforms = {
+  uTime: { value: 0 },
+  uResolution: { value: new THREE.Vector2(innerWidth, innerHeight) },
+  uMouse: { value: new THREE.Vector2(0, 0) },
+  uScroll: { value: 0 }
+};
+let sparkParticles;
+const sparkCount = 450;
+const sparkData = [];
+const sizes = { width: innerWidth, height: innerHeight };
+
+/* ---------- background liquid-bronze shader ---------- */
+function createBackgroundShader() {
+  const vertexShader = `
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+  `;
+  const fragmentShader = `
+    varying vec2 vUv;
+    uniform float uTime; uniform vec2 uResolution; uniform vec2 uMouse; uniform float uScroll;
+    float hash(float n) { return fract(sin(n) * 43758.5453123); }
+    float noise(in vec3 x) {
+      vec3 p = floor(x); vec3 f = fract(x); f = f*f*(3.0-2.0*f);
+      float n = p.x + p.y*57.0 + 113.0*p.z;
+      return mix(mix(mix(hash(n+0.0), hash(n+1.0), f.x), mix(hash(n+57.0), hash(n+58.0), f.x), f.y),
+                 mix(mix(hash(n+113.0), hash(n+114.0), f.x), mix(hash(n+170.0), hash(n+171.0), f.x), f.y), f.z);
+    }
+    void main() {
+      vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
+      float aspect = uResolution.x / uResolution.y;
+      float time = uTime * 0.08;
+      float scroll = uScroll;
+      float angle1 = 0.6; float angle2 = -0.7; float angle3 = 1.2;
+      float freq1 = 2.4; float freq2 = 3.2; float freq3 = 4.0;
+      vec2 warpedUv = uv;
+      float scrollDeform = scroll * 5.0;
+      warpedUv.x += sin(uv.y * 2.5 + time * 0.2 + scrollDeform) * 0.35;
+      warpedUv.y += cos(uv.x * 2.5 - time * 0.15 - scrollDeform * 0.8) * 0.35;
+      warpedUv.x += sin(uv.y * 1.2 - time * 0.1 - scrollDeform * 1.5) * 0.25;
+      warpedUv.y += cos(uv.x * 1.2 + time * 0.18 + scrollDeform * 1.2) * 0.25;
+      vec2 scrollDrift = vec2(scroll * 0.04, -scroll * 0.02);
+      vec2 mouseShift = vec2(uMouse.x * aspect * 0.05, uMouse.y * 0.05);
+      warpedUv += scrollDrift + mouseShift;
+      vec2 dir1 = vec2(cos(angle1), sin(angle1));
+      vec2 dir2 = vec2(cos(angle2), sin(angle2));
+      vec2 dir3 = vec2(cos(angle3), sin(angle3));
+      float w1 = sin(dot(warpedUv, dir1) * freq1 + time * 1.0);
+      float w2 = cos(dot(warpedUv, dir2) * freq2 - time * 1.4 + w1 * 0.4);
+      float w3 = sin(dot(warpedUv, dir3) * freq3 + time * 1.8 + w2 * 0.5);
+      float waveField = w1 * 0.50 + w2 * 0.35 + w3 * 0.15;
+      float wideSheen = pow(max(0.0, 1.0 - abs(waveField - 0.1)), 2.5);
+      float crispSpecular = pow(max(0.0, 1.0 - abs(waveField - 0.15)), 8.0);
+      float crest = wideSheen * 0.5 + crispSpecular * 0.9;
+      vec3 c0_shadow = vec3(0.0010, 0.0006, 0.0004);
+      vec3 c0_wave1  = vec3(0.085, 0.040, 0.015);
+      vec3 c0_wave2  = vec3(0.050, 0.022, 0.008);
+      vec3 c0_crest  = vec3(0.45, 0.30, 0.18);
+      vec3 c1_shadow = vec3(0.0004, 0.0006, 0.0012);
+      vec3 c1_wave1  = vec3(0.015, 0.035, 0.065);
+      vec3 c1_wave2  = vec3(0.008, 0.020, 0.045);
+      vec3 c1_crest  = vec3(0.18, 0.35, 0.55);
+      float t = smoothstep(0.0, 1.0, scroll);
+      vec3 colShadow = mix(c0_shadow, c1_shadow, t);
+      vec3 colWave1  = mix(c0_wave1, c1_wave1, t);
+      vec3 colWave2  = mix(c0_wave2, c1_wave2, t);
+      vec3 colCrest  = mix(c0_crest, c1_crest, t);
+      vec3 color = colShadow;
+      color = mix(color, colWave2, smoothstep(-0.6, 0.2, waveField));
+      color = mix(color, colWave1, smoothstep(0.0, 0.8, waveField));
+      color += colCrest * crest * 1.4;
+      float vignette = 1.0 - dot(uv, uv) * 0.12;
+      color *= vignette;
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
+  bgMaterial = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms: shaderUniforms, depthWrite: false, depthTest: false });
+  const bgMesh = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), bgMaterial);
+  bgMesh.position.set(0.0, 0.0, -8.0);
+  bgMesh.renderOrder = -10;
+  camera.add(bgMesh);
+}
+
+/* ---------- sparks ---------- */
+function createSparkTexture() {
+  const c = document.createElement('canvas'); c.width = 16; c.height = 16;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,0.85)');
+  g.addColorStop(0.6, 'rgba(255,255,255,0.3)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 16, 16);
+  return new THREE.CanvasTexture(c);
+}
+function createSparks() {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(sparkCount * 3);
+  const colors = new Float32Array(sparkCount * 3);
+  for (let i = 0; i < sparkCount; i++) {
+    positions[i*3] = (Math.random() - 0.5) * 6.5;
+    positions[i*3+1] = (Math.random() - 0.5) * 5.0 - 0.5;
+    positions[i*3+2] = (Math.random() - 0.5) * 6.5;
+    if (Math.random() < 0.6) {
+      colors[i*3] = 1.0; colors[i*3+1] = 0.4 + Math.random() * 0.15; colors[i*3+2] = 0.05 + Math.random() * 0.1;
+    } else {
+      colors[i*3] = 0.55 + Math.random() * 0.15; colors[i*3+1] = 0.82 + Math.random() * 0.12; colors[i*3+2] = 1.0;
+    }
+    sparkData.push({
+      speedX: (Math.random() - 0.5) * 0.4, speedY: 0.15 + Math.random() * 0.3, speedZ: (Math.random() - 0.5) * 0.4,
+      swaySpeed: 0.5 + Math.random() * 1.5, swayRadius: 0.05 + Math.random() * 0.15, phase: Math.random() * Math.PI * 2
+    });
+  }
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const material = new THREE.PointsMaterial({
+    size: 0.025, vertexColors: true, transparent: true, opacity: 0.85,
+    blending: THREE.AdditiveBlending, depthWrite: false, map: createSparkTexture()
+  });
+  sparkParticles = new THREE.Points(geometry, material);
+  scene.add(sparkParticles);
+}
+
+/* ---------- model ---------- */
+function fitModel(obj) {
+  const boxInitial = new THREE.Box3().setFromObject(obj);
+  const sizeInitial = boxInitial.getSize(new THREE.Vector3());
+  const maxDim = Math.max(sizeInitial.x, sizeInitial.y, sizeInitial.z);
+  obj.scale.setScalar(3.5 / (maxDim > 0.0001 ? maxDim : 1));
+  obj.updateMatrixWorld(true);
+  const centerScaled = new THREE.Box3().setFromObject(obj).getCenter(new THREE.Vector3());
+  obj.position.sub(centerScaled);
+  modelPivot.position.y = -0.4;
+}
+function loadModel() {
+  const loader = new GLTFLoader();
+  loader.load(ASSET_BASE_URL + '/bronze_horse.glb', (gltf) => {
+    gltfModel = gltf.scene;
+    modelPivot = new THREE.Group();
+    scene.add(modelPivot);
+    modelPivot.add(gltfModel);
+    gltfModel.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true; child.receiveShadow = true;
+        if (child.material) {
+          child.material.roughness = 0.42; child.material.metalness = 0.92; child.material.flatShading = false;
+          if (child.material.map) child.material.map.anisotropy = 16;
+        }
+      }
+    });
+    if (gltf.animations && gltf.animations.length > 0) {
+      mixer = new THREE.AnimationMixer(gltfModel);
+      gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+    }
+    fitModel(gltfModel);
+  }, undefined, (error) => {
+    console.error('Error loading bronze horse model:', error);
+    // fallback sculpture so the stage is never empty
+    modelPivot = new THREE.Group(); scene.add(modelPivot);
+    const m = new THREE.Mesh(new THREE.TorusKnotGeometry(1, 0.32, 220, 32),
+      new THREE.MeshStandardMaterial({ color: '#cd7f32', roughness: 0.42, metalness: 0.92 }));
+    m.castShadow = true; m.receiveShadow = true;
+    modelPivot.add(m); fitModel(m);
+  });
+}
+
+/* ---------- init ---------- */
+function splitTitlesIntoChars() {
+  document.querySelectorAll('.slide-title').forEach(title => {
+    const text = title.innerHTML;
+    let newHTML = ''; let delayCounter = 0;
+    text.split(/(<br\s*\/?>)/i).forEach(part => {
+      if (part.toLowerCase().startsWith('<br')) { newHTML += part; }
+      else {
+        for (let i = 0; i < part.length; i++) {
+          if (part[i] === ' ') newHTML += ' ';
+          else { newHTML += `<span class="char" style="transition-delay: ${delayCounter * 0.035}s">${part[i]}</span>`; delayCounter++; }
+        }
+      }
+    });
+    title.innerHTML = newHTML;
+  });
+}
+
+function initScene() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color('#000000');
+  scene.fog = new THREE.FogExp2('#000000', 0.01);
+  camera = new THREE.PerspectiveCamera(50, sizes.width / sizes.height, 0.1, 100);
+  camera.position.set(0, 0.2, 3.0);
+  scene.add(camera);
+  createBackgroundShader();
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 2.2;
+
+  scene.add(new THREE.AmbientLight('#ffffff', 0.1));
+  const keyLight = new THREE.SpotLight('#ffffff', 18.0);
+  keyLight.position.set(4, 6, 3); keyLight.angle = Math.PI / 4; keyLight.penumbra = 0.9; keyLight.castShadow = true;
+  keyLight.shadow.mapSize.width = 2048; keyLight.shadow.mapSize.height = 2048;
+  keyLight.shadow.camera.near = 1.0; keyLight.shadow.camera.far = 15; keyLight.shadow.bias = -0.001;
+  scene.add(keyLight);
+  const rimLight = new THREE.DirectionalLight('#e3f2ff', 10.0); rimLight.position.set(-5, 3, -4); scene.add(rimLight);
+  const fillLight = new THREE.DirectionalLight('#fff3e6', 0.8); fillLight.position.set(-2, -4, 2); scene.add(fillLight);
+
+  createSparks();
+  loadModel();
+}
+
+function onWindowResize() {
+  sizes.width = innerWidth; sizes.height = innerHeight;
+  camera.aspect = sizes.width / sizes.height; camera.updateProjectionMatrix();
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  shaderUniforms.uResolution.value.set(sizes.width, sizes.height);
+}
+
+/* ---------- pointer ---------- */
+const cursorInner = document.querySelector('.cursor-inner');
+const cursorOuter = document.querySelector('.cursor-outer');
+addEventListener('mousemove', (e) => {
+  cursorX = e.clientX; cursorY = e.clientY;
+  cursorInner.style.left = `${cursorX}px`; cursorInner.style.top = `${cursorY}px`;
+  targetMouseX = (e.clientX / innerWidth) * 2 - 1;
+  targetMouseY = (e.clientY / innerHeight) * 2 - 1;
+});
+document.addEventListener('mouseover', (e) => {
+  cursorOuter.classList.toggle('hot', !!e.target.closest('button, a, input, select, #slide-2-img.active, .ba-container'));
+});
+addEventListener('resize', onWindowResize);
+
+/* ---------- loop helpers ---------- */
+function updateGridDots(scroll) {
+  document.querySelectorAll('.grid-dot').forEach((dot, i) => {
+    const startY = (i * 17) % 80 + 10;
+    let speed = 90 + (i * 55) % 180;
+    if (i % 2 === 0) speed = -speed;
+    let y = startY + scroll * speed;
+    y = ((y % 100) + 100) % 100;
+    dot.style.top = `${y}%`;
+  });
+}
+function updateSlides(scroll) {
+  const s = [1,2,3,4].map(i => document.getElementById('slide-' + i));
+  for (let i = 1; i <= 4; i++) {
+    const fill = document.getElementById(`dash-fill-${i}`);
+    if (fill) {
+      const start = (i - 1) * 0.25, end = i * 0.25;
+      const p = Math.max(0, Math.min(1, (scroll - start) / (end - start)));
+      fill.style.height = `${p * 100}%`;
+    }
+  }
+  const isActive = (v, a, b) => v >= a && v <= b;
+  s[0].classList.toggle('active', isActive(scroll, -0.10, 0.12));
+  const a2 = isActive(scroll, 0.28, 0.40);
+  s[1].classList.toggle('active', a2);
+  document.getElementById('slide-2-img').classList.toggle('active', a2);
+  s[2].classList.toggle('active', isActive(scroll, 0.56, 0.68));
+  s[3].classList.toggle('active', isActive(scroll, 0.84, 1.05));
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const deltaTime = clock.getDelta();
+  if (mixer) mixer.update(deltaTime);
+
+  const maxScroll = document.documentElement.scrollHeight - innerHeight;
+  const scrollTop = window.scrollY !== undefined ? window.scrollY : (window.pageYOffset !== undefined ? window.pageYOffset : document.documentElement.scrollTop);
+  const targetScroll = maxScroll > 0 ? scrollTop / maxScroll : 0;
+  currentScroll += (targetScroll - currentScroll) * 0.025;
+
+  mouseX += (targetMouseX - mouseX) * 0.05;
+  mouseY += (targetMouseY - mouseY) * 0.05;
+  outerCursorX += (cursorX - outerCursorX) * 0.2;
+  outerCursorY += (cursorY - outerCursorY) * 0.2;
+  cursorOuter.style.left = `${outerCursorX}px`; cursorOuter.style.top = `${outerCursorY}px`;
+
+  if (modelPivot) { modelPivot.rotation.y = mouseX * 0.25; modelPivot.rotation.x = mouseY * 0.15; }
+
+  if (sparkParticles) {
+    const positions = sparkParticles.geometry.attributes.position.array;
+    const time = clock.getElapsedTime();
+    const scrollVelocity = Math.abs(targetScroll - currentScroll);
+    const speedMultiplier = 1.0 + scrollVelocity * 9.0;
+    const turbulence = scrollVelocity * 0.8;
+    for (let i = 0; i < sparkCount; i++) {
+      const idx = i * 3; const data = sparkData[i];
+      positions[idx]   += data.speedX * deltaTime * speedMultiplier;
+      positions[idx+1] += data.speedY * deltaTime * speedMultiplier;
+      positions[idx+2] += data.speedZ * deltaTime * speedMultiplier;
+      const currentSway = data.swayRadius * (1.0 + turbulence * 4.0);
+      positions[idx]   += Math.sin(time * data.swaySpeed + data.phase) * currentSway * deltaTime;
+      positions[idx+2] += Math.cos(time * data.swaySpeed + data.phase) * currentSway * deltaTime;
+      if (positions[idx+1] > 3.0 || Math.abs(positions[idx]) > 3.5 || Math.abs(positions[idx+2]) > 3.5) {
+        positions[idx+1] = -2.5;
+        positions[idx]   = (Math.random() - 0.5) * 3.0;
+        positions[idx+2] = (Math.random() - 0.5) * 3.0;
+      }
+    }
+    sparkParticles.geometry.attributes.position.needsUpdate = true;
+  }
+
+  const phi = currentScroll * Math.PI * 2.0;
+  const y = 0.35 + Math.sin(currentScroll * Math.PI) * 0.8;
+  const radius = 4.2 - Math.sin(currentScroll * Math.PI) * 0.6;
+  const x = radius * Math.sin(phi), z = radius * Math.cos(phi);
+  const transitionProgress = Math.min(1.0, currentScroll / 0.28);
+  const easeFactor = (Math.cos(transitionProgress * Math.PI) + 1.0) * 0.5;
+  const lookAtXOffset = -0.9 * easeFactor;
+  camera.position.lerp(new THREE.Vector3(x, y, z), 0.025);
+  camera.lookAt(new THREE.Vector3(lookAtXOffset, -0.15, 0));
+
+  shaderUniforms.uTime.value = clock.getElapsedTime();
+  shaderUniforms.uMouse.value.set(mouseX, -mouseY);
+  shaderUniforms.uScroll.value = currentScroll;
+
+  updateSlides(currentScroll);
+  updateGridDots(currentScroll);
+  renderer.render(scene, camera);
+}
+
+/* ---------- navigation ---------- */
+const targetScrolls = [0.0, 0.34, 0.62, 0.94];
+function scrollToProgress(p) {
+  const maxScroll = document.documentElement.scrollHeight - innerHeight;
+  window.scrollTo({ top: maxScroll * p, behavior: 'smooth' });
+}
+function setupNavigation() {
+  document.querySelectorAll('.nav-link').forEach((link, index) => {
+    link.addEventListener('click', (e) => { e.preventDefault(); scrollToProgress(targetScrolls[index]); });
+  });
+  document.querySelectorAll('[data-go]').forEach(b =>
+    b.addEventListener('click', () => scrollToProgress(targetScrolls[parseInt(b.dataset.go.split('-')[1]) - 1])));
+}
+
+/* =====================================================
+   MAESTRO APP — upload · styles · AI render · compare · accounts · payments · database
+   ===================================================== */
+const $ = (id) => document.getElementById(id);
+const IMG = (id) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=80`;
+const SAMPLE_BEFORE = IMG('photo-1513694203232-719a280e022f');
+const SAMPLE_AFTER = IMG('photo-1598928506311-c55ded91a20c');
+const scrollP = (i) => scrollToProgress(targetScrolls[i]);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- 150+ styles (10 collections) ---------- */
+const CATS = [
+  { n: 'Nordic & Calm', h: 35, s: 25, l: 62, d: 'light natural oak, soft linen textiles, airy daylight, calm uncluttered composition',
+    v: 'Japandi,Scandinavian,Hygge,Nordic Minimal,Wabi-Sabi,Zen,Danish Modern,Swedish Gustavian,Finnish Sauna Chic,Coastal Scandi,Alpine Chalet,Soft Minimalism,Warm Minimalism,Organic Modern,Biophilic Calm' },
+  { n: 'Modern & Contemporary', h: 210, s: 15, l: 55, d: 'clean lines, restrained palette, statement lighting, glass and matte metal',
+    v: 'Minimalist,Modern,Contemporary,Mid-Century Modern,Urban Modern,Bauhaus,Postmodern,Brutalist,Neo-Modern,Smart Home,Open Plan Loft,Monochrome,Greige Modern,Glass & Steel,Architectural Concrete' },
+  { n: 'Luxury & Glam', h: 38, s: 55, l: 32, d: 'rich marble, polished brass, velvet upholstery, dramatic layered lighting',
+    v: 'Dark Luxury,Art Deco,Hollywood Regency,Neoclassical Luxe,Parisian Chic,Royal Gold,Black & Gold,Marble Palace,Velvet Noir,Penthouse Suite,Boutique Hotel,Opulent Maximal,Bronze Elegance,Champagne Glam,Italian Villa' },
+  { n: 'Classic & Historic', h: 25, s: 35, l: 45, d: 'refined moldings, period furniture, symmetry, warm traditional materials',
+    v: 'Modern Classic,Victorian,Georgian,Edwardian,Baroque,Rococo,French Provincial,English Country,Tudor,Colonial,Federal,Regency,Gothic Revival,Renaissance,Beaux-Arts' },
+  { n: 'Rustic & Natural', h: 95, s: 30, l: 42, d: 'reclaimed wood, natural stone, handcrafted textures, earthy warm tones',
+    v: 'Farmhouse,Modern Farmhouse,Rustic Cabin,Cottagecore,Tuscan,Mediterranean,Provence Lavender,Log Lodge,Barn Conversion,Mountain Retreat,Boho Earth,Terracotta Clay,Forest Green,Stone & Timber,Countryside Manor' },
+  { n: 'Industrial & Urban', h: 200, s: 8, l: 40, d: 'exposed brick, raw concrete, black steel, vintage pendant lights',
+    v: 'Industrial,Loft Brick,Factory Steel,Warehouse Concrete,Urban Jungle,New York Loft,Berlin Raw,Steampunk,Metro Minimal,Cyber Noir,Garage Studio,Exposed Pipes,Scandinavian Industrial,Rust & Iron,Concrete Zen' },
+  { n: 'Global & Cultural', h: 12, s: 60, l: 48, d: 'authentic regional patterns, handcrafted artisan decor, traditional materials',
+    v: 'Moroccan,Japanese Traditional,Korean Hanok,Chinese Imperial,Indian Palace,Balinese,Thai Teak,Mexican Hacienda,Turkish Ottoman,Persian Heritage,Egyptian Revival,Greek Cycladic,Spanish Andalusian,African Safari,Caribbean Colonial,Azerbaijani Heritage' },
+  { n: 'Bold & Eclectic', h: 300, s: 55, l: 50, d: 'saturated colors, layered patterns, expressive art and collected objects',
+    v: 'Maximalist,Eclectic,Bohemian,Memphis,Pop Art,Color Block,Jewel Tones,Emerald Velvet,Sapphire Night,Neon Lounge,Kitsch,Gallery Wall,Collectors Home,Playful Kids,Surreal Dream' },
+  { n: 'Retro & Eras', h: 45, s: 70, l: 52, d: 'period-accurate furniture and the signature colors and materials of the era',
+    v: 'Retro 70s,Disco Glam,60s Mod,50s Diner,80s Neon,90s Grunge,Y2K,Space Age,Atomic Ranch,Roaring Twenties,Vintage Parisian,Art Nouveau,Arts & Crafts,Mission Style,Retro Futurism' },
+  { n: 'Futuristic & Special', h: 190, s: 70, l: 50, d: 'sleek smart surfaces, ambient LED lighting, innovative forms and materials',
+    v: 'Futuristic,Cyberpunk,Sci-Fi Pod,Minimal Tech,Holographic,Eco Smart Home,Sustainable Green,Biophilic Jungle,Underwater Aquarium,Spa Retreat,Home Cinema,Gaming Den,Creative Studio,Home Office Pro,Luxury Bathroom' }
+];
+const STYLES = [];
+CATS.forEach((c) => c.v.split(',').forEach((n, i) => STYLES.push({ n, cat: c.n, h: (c.h + i * 17) % 360, s: c.s, l: c.l, d: c.d })));
+const ROOMS = ['Living room', 'Bedroom', 'Kitchen', 'Bathroom', 'Dining room', 'Home office', 'Kids room', 'Hallway'];
+const PALETTES = ['Auto', 'Warm', 'Cool', 'Neutral', 'Dark & Moody', 'Pastel', 'Vivid'];
+const sw = (s) => `linear-gradient(135deg,hsl(${s.h} ${s.s}% ${s.l}%),hsl(${(s.h + 28) % 360} ${s.s}% ${Math.round(s.l * 0.42)}%))`;
+const PLANS = { starter: { n: 'Starter', c: 20, p: 9 }, pro: { n: 'Pro', c: 100, p: 29 }, studio: { n: 'Studio', c: 500, p: 49 } };
+
+/* ---------- settings ---------- */
+const CFG0 = { provider: 'demo', token: '', endpoint: '', strength: 85, stripe: { starter: '', pro: '', studio: '' } };
+let cfg = (() => { try { const c = Object.assign({}, CFG0, JSON.parse(localStorage.getItem('maestro_cfg') || '{}')); c.stripe = Object.assign({}, CFG0.stripe, c.stripe); return c; } catch (e) { return JSON.parse(JSON.stringify(CFG0)); } })();
+const saveCfg = () => { try { localStorage.setItem('maestro_cfg', JSON.stringify(cfg)); } catch (e) {} };
+
+/* ---------- database (IndexedDB: users, generations, orders) ---------- */
+let _db;
+const dbOpen = () => _db || (_db = new Promise((res, rej) => {
+  const r = indexedDB.open('maestro', 1);
+  r.onupgradeneeded = () => {
+    const d = r.result;
+    d.createObjectStore('users', { keyPath: 'email' });
+    d.createObjectStore('gens', { keyPath: 'id' }).createIndex('uid', 'uid');
+    d.createObjectStore('orders', { keyPath: 'id' }).createIndex('uid', 'uid');
+  };
+  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+}));
+const tx = async (s, m, f) => { const d = await dbOpen(); return new Promise((res, rej) => { const t = d.transaction(s, m); const q = f(t.objectStore(s)); t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error); }); };
+const dbPut = (s, o) => tx(s, 'readwrite', (st) => st.put(o));
+const dbGet = (s, k) => tx(s, 'readonly', (st) => st.get(k));
+const dbDel = (s, k) => tx(s, 'readwrite', (st) => st.delete(k));
+const dbBy = (s, uid) => tx(s, 'readonly', (st) => st.index('uid').getAll(uid));
+async function hash(p, salt) {
+  const b = new TextEncoder().encode(salt + p);
+  if (window.crypto && crypto.subtle) { const h = await crypto.subtle.digest('SHA-256', b); return [...new Uint8Array(h)].map((x) => x.toString(16).padStart(2, '0')).join(''); }
+  return btoa(salt + p);
+}
+
+async function api(path, method = 'GET', body) {
+  const r = await fetch('/api' + path, { method, credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  let j = {}; try { j = await r.json(); } catch (e) {}
+  if (!r.ok) { const e = new Error(j.error || 'Server error ' + r.status); e.status = r.status; throw e; }
+  return j;
+}
+
+/* ---------- toast & modals ---------- */
+let toastTimer;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 3200); }
+const openM = (id) => $(id).classList.add('open');
+const closeM = (id) => $(id).classList.remove('open');
+document.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => {
+  if (b.dataset.open === 'm-pricing') refreshPayMode();
+  openM(b.dataset.open);
+}));
+document.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => b.closest('.modal').classList.remove('open')));
+document.querySelectorAll('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); }));
+addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal.open').forEach((m) => m.classList.remove('open')); });
+
+/* ---------- state ---------- */
+let server = false;
+let user = null, roomData = null, activeCat = -1, activeStyle = STYLES[0], renderedUrl = SAMPLE_AFTER, busy = false, authMode = 'in';
+
+function updateUI() {
+  $('btn-acct').textContent = user ? `${user.name.split(' ')[0]} · ${user.credits} cr` : 'Sign in';
+}
+
+/* ---------- upload ---------- */
+const roomInput = $('room-file-input'), mask = $('slide-2-img');
+function downscale(src, max) {
+  return new Promise((res) => {
+    const im = new Image();
+    im.onload = () => { const k = Math.min(1, max / Math.max(im.width, im.height)); const c = document.createElement('canvas'); c.width = Math.round(im.width * k); c.height = Math.round(im.height * k); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', 0.92)); };
+    im.onerror = () => res(src); im.src = src;
+  });
+}
+function handleFile(files) {
+  const f = files && files[0];
+  if (!f || !f.type.startsWith('image/')) { if (f) toast('Please choose an image file'); return; }
+  const r = new FileReader();
+  r.onload = async (e) => {
+    roomData = await downscale(e.target.result, 1024);
+    $('uploaded-room-img').src = roomData;
+    $('drop-label').textContent = 'Change photo';
+    showPair(roomData, null);
+    toast('Room photo loaded — now choose a style');
+  };
+  r.readAsDataURL(f);
+}
+mask.addEventListener('click', () => roomInput.click());
+$('btn-pick').addEventListener('click', () => roomInput.click());
+roomInput.addEventListener('change', (e) => handleFile(e.target.files));
+['dragenter', 'dragover'].forEach((n) => mask.addEventListener(n, (e) => { e.preventDefault(); mask.classList.add('drag'); }));
+['dragleave', 'drop'].forEach((n) => mask.addEventListener(n, (e) => { e.preventDefault(); mask.classList.remove('drag'); }));
+mask.addEventListener('drop', (e) => handleFile(e.dataTransfer.files));
+
+/* ---------- style selector ---------- */
+function renderTabs() {
+  $('cat-tabs').innerHTML = [`All (${STYLES.length})`, ...CATS.map((c) => c.n)].map((n, i) => `<button class="tab${i - 1 === activeCat ? ' active' : ''}" data-c="${i - 1}">${esc(n)}</button>`).join('');
+}
+function renderStyles() {
+  const q = $('style-search').value.trim().toLowerCase();
+  const list = STYLES.filter((s) => (activeCat < 0 || s.cat === CATS[activeCat].n) && (!q || s.n.toLowerCase().includes(q) || s.cat.toLowerCase().includes(q)));
+  $('style-grid').innerHTML = list.map((s) => `<button class="schip${s === activeStyle ? ' active' : ''}" data-n="${esc(s.n)}"><i style="background:${sw(s)}"></i>${esc(s.n)}</button>`).join('') || '<span class="muted">No styles found</span>';
+  $('sel-label').textContent = `Selected: ${activeStyle.n} · ${activeStyle.cat}`;
+}
+function selectStyle(s) {
+  activeStyle = s;
+  $('render-style-title').innerHTML = `Style: ${esc(s.n)}<span>${esc(s.cat)} • 1 credit per render</span>`;
+  renderStyles();
+}
+$('cat-tabs').addEventListener('click', (e) => { const b = e.target.closest('.tab'); if (!b) return; activeCat = +b.dataset.c; renderTabs(); renderStyles(); });
+$('style-grid').addEventListener('click', (e) => { const b = e.target.closest('.schip'); if (b) selectStyle(STYLES.find((s) => s.n === b.dataset.n)); });
+$('style-search').addEventListener('input', renderStyles);
+$('room-type').innerHTML = ROOMS.map((r) => `<option>${r}</option>`).join('');
+$('palette').innerHTML = PALETTES.map((p) => `<option>${p === 'Auto' ? 'Palette: Auto' : p}</option>`).join('');
+const palVal = () => PALETTES[$('palette').selectedIndex];
+
+/* ---------- before / after ---------- */
+let baReady = false;
+function initBA() {
+  if (baReady) return; baReady = true;
+  const box = $('ba-slider-box'); let drag = false;
+  const set = (x) => { const r = box.getBoundingClientRect(); const p = Math.max(0, Math.min(r.width, x - r.left)) / r.width * 100; $('ba-before-wrap').style.width = p + '%'; $('ba-line').style.left = p + '%'; };
+  box.addEventListener('mousedown', (e) => { drag = true; set(e.clientX); });
+  addEventListener('mouseup', () => { drag = false; });
+  addEventListener('mousemove', (e) => { if (drag) set(e.clientX); });
+  box.addEventListener('touchstart', (e) => { drag = true; set(e.touches[0].clientX); }, { passive: true });
+  addEventListener('touchend', () => { drag = false; });
+  addEventListener('touchmove', (e) => { if (drag) set(e.touches[0].clientX); }, { passive: true });
+}
+function showPair(before, after) {
+  if (before) $('ba-before-img').src = before;
+  if (after) $('ba-after-img').src = after;
+  $('ba-before-wrap').style.width = '50%'; $('ba-line').style.left = '50%';
+}
+function openBA() { initBA(); openM('ba-modal'); }
+$('btn-compare').addEventListener('click', () => {
+  if (roomData && renderedUrl !== SAMPLE_AFTER) showPair(roomData, renderedUrl); else showPair(SAMPLE_BEFORE, SAMPLE_AFTER);
+  openBA();
+});
+$('btn-demo').addEventListener('click', () => { showPair(SAMPLE_BEFORE, SAMPLE_AFTER); openBA(); });
+
+/* ---------- AI engines ---------- */
+function buildPrompt() {
+  const s = activeStyle, room = ROOMS[$('room-type').selectedIndex], pal = palVal(), c = $('custom-prompt').value.trim();
+  return `Redesign this ${room.toLowerCase()} in ${s.n} interior design style (${s.cat}): ${s.d}. ${pal !== 'Auto' ? pal + ' color palette. ' : ''}Keep the exact room architecture, walls, windows, doors and camera perspective. Replace furniture, materials, lighting and decor. Photorealistic architectural photography, natural light, high detail.${c ? ' Additional wishes: ' + c : ''}`;
+}
+function grade(src, s, pal) {
+  return new Promise((res) => {
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const x = c.getContext('2d');
+      let h = s.h, sa = s.s, l = s.l;
+      if (pal === 'Warm') h = 28; if (pal === 'Cool') h = 210; if (pal === 'Neutral') sa = 8;
+      if (pal === 'Dark & Moody') l *= 0.55; if (pal === 'Pastel') { l = 78; sa = Math.min(sa, 45); } if (pal === 'Vivid') sa = 90;
+      const dark = l < 42;
+      x.filter = `contrast(${dark ? 1.18 : 1.06}) saturate(${1 + sa / 160}) brightness(${dark ? 0.82 : 1.04})`;
+      x.drawImage(im, 0, 0); x.filter = 'none';
+      const g = x.createLinearGradient(0, 0, c.width, c.height);
+      g.addColorStop(0, `hsl(${h} ${sa + 15}% ${l}%)`); g.addColorStop(1, `hsl(${(h + 30) % 360} ${sa}% ${l * 0.45}%)`);
+      x.globalCompositeOperation = 'soft-light'; x.fillStyle = g; x.fillRect(0, 0, c.width, c.height);
+      x.globalCompositeOperation = 'multiply'; x.globalAlpha = 0.22; x.fillRect(0, 0, c.width, c.height); x.globalAlpha = 1;
+      x.globalCompositeOperation = 'source-over';
+      const v = x.createRadialGradient(c.width / 2, c.height / 2, c.height * 0.3, c.width / 2, c.height / 2, c.width * 0.75);
+      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.45)'); x.fillStyle = v; x.fillRect(0, 0, c.width, c.height);
+      x.fillStyle = 'rgba(255,255,255,.7)'; x.font = `${Math.max(12, c.width / 60)}px sans-serif`; x.textAlign = 'right';
+      x.fillText(`MAESTRO · ${s.n} · preview`, c.width - 14, c.height - 14);
+      res(c.toDataURL('image/jpeg', 0.92));
+    };
+    im.onerror = () => res(src); im.src = src;
+  });
+}
+async function aiOpenAI(prompt) {
+  if (!cfg.token) throw new Error('Add your OpenAI key in AI Config');
+  const blob = await (await fetch(roomData)).blob();
+  const fd = new FormData();
+  fd.append('model', 'gpt-image-2'); fd.append('image', blob, 'room.jpg'); fd.append('prompt', prompt); fd.append('size', 'auto');
+  const r = await fetch('https://api.openai.com/v1/images/edits', { method: 'POST', headers: { Authorization: 'Bearer ' + cfg.token }, body: fd });
+  const j = await r.json();
+  if (!r.ok) throw new Error((j.error && j.error.message) || 'OpenAI request failed');
+  return 'data:image/png;base64,' + j.data[0].b64_json;
+}
+async function aiCustom(prompt) {
+  if (!cfg.endpoint) throw new Error('Add your backend endpoint in AI Config');
+  const headers = { 'Content-Type': 'application/json' };
+  if (cfg.token) headers.Authorization = 'Bearer ' + cfg.token;
+  const r = await fetch(cfg.endpoint, { method: 'POST', headers, body: JSON.stringify({ image: roomData, prompt, style: activeStyle.n, collection: activeStyle.cat, room: ROOMS[$('room-type').selectedIndex], palette: palVal(), strength: cfg.strength / 100, user: user && user.email }) });
+  if (!r.ok) throw new Error('Backend error ' + r.status);
+  const j = await r.json();
+  let o = j.image || j.output || j.url || (j.data && j.data[0] && (j.data[0].url || j.data[0].b64_json));
+  if (Array.isArray(o)) o = o[0];
+  if (!o) throw new Error('Backend returned no image');
+  return /^(data:|https?:)/.test(o) ? o : 'data:image/png;base64,' + o;
+}
+
+async function generate() {
+  if (busy) return;
+  if (!roomData) { toast('Upload a room photo first'); scrollP(1); return; }
+  if (!user) { toast('Continue with Google to get your 1 free AI image'); openAccount(); return; }
+  if (user.credits < 1) { toast('No credits left'); refreshPayMode(); openM('m-pricing'); return; }
+  busy = true; scrollP(3);
+  const loader = $('render-loader'); loader.classList.add('on');
+  const steps = ['Mapping room geometry…', 'Applying ' + activeStyle.n + '…', 'Neural diffusion synthesis…', 'Finishing photorealistic details…'];
+  let si = 0; $('loader-text').textContent = steps[0];
+  const iv = setInterval(() => { si = (si + 1) % steps.length; $('loader-text').textContent = steps[si]; }, 1800);
+  try {
+    let out;
+    if (server) {
+      const j = await api('/generate', 'POST', { image: roomData, style: activeStyle.n, category: activeStyle.cat, description: activeStyle.d, room: ROOMS[$('room-type').selectedIndex], palette: palVal(), custom: $('custom-prompt').value.trim() });
+      out = j.image; user.credits = j.credits;
+    } else {
+      const prompt = buildPrompt(); let out;
+    if (cfg.provider === 'openai') out = await aiOpenAI(prompt);
+    else if (cfg.provider === 'custom') out = await aiCustom(prompt);
+    else { await new Promise((r) => setTimeout(r, 2400)); out = await grade(roomData, activeStyle, palVal()); }
+    user.credits--; await dbPut('users', user);
+    await dbPut('gens', { id: 'g' + Date.now(), uid: user.email, style: activeStyle.n, cat: activeStyle.cat, room: ROOMS[$('room-type').selectedIndex], palette: palVal(), prompt, provider: cfg.provider, before: roomData, after: out, ts: Date.now() });
+    }
+    renderedUrl = out; $('rendered-output-img').src = out; showPair(roomData, out); updateUI();
+    toast('Render saved to your gallery');
+  } catch (e) {
+    toast(e.message || 'Render failed');
+    if (e.status === 402) { refreshPayMode(); openM('m-pricing'); }
+    if (e.status === 401) { user = null; updateUI(); openAccount('in'); }
+  }
+  finally { clearInterval(iv); loader.classList.remove('on'); busy = false; }
+}
+$('btn-render').addEventListener('click', generate);
+
+/* ---------- download & share ---------- */
+$('btn-download').addEventListener('click', async () => {
+  const a = document.createElement('a'); a.download = `Maestro-${activeStyle.n.replace(/\s+/g, '-')}.jpg`;
+  try { const b = await (await fetch(renderedUrl)).blob(); a.href = URL.createObjectURL(b); } catch (e) { a.href = renderedUrl; a.target = '_blank'; a.rel = 'noopener'; }
+  document.body.appendChild(a); a.click(); a.remove();
+});
+$('btn-share').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(location.href.split('?')[0]); } catch (e) { const d = document.createElement('input'); document.body.appendChild(d); d.value = location.href; d.select(); document.execCommand('copy'); d.remove(); }
+  toast('Link copied to clipboard');
+});
+$('btn-gallery').addEventListener('click', () => openAccount());
+
+/* ---------- accounts ---------- */
+async function openAccount(mode) { if (mode) authMode = mode; await renderAccount(); openM('m-account'); }
+$('btn-acct').addEventListener('click', () => openAccount());
+async function renderAccount() {
+  const b = $('acct-body');
+  if (!user) {
+    b.innerHTML = `<div style="text-align:center;padding:14px 0 8px">
+      <div class="big" style="margin-bottom:8px">Welcome to Maestro AI</div>
+      <p class="muted" style="margin:0 auto 20px;max-width:320px">Continue securely with your Google account. Your first AI image is free — no API key or password needed.</p>
+      <button class="pill" type="button" id="google-signin" style="justify-content:center;width:100%">Continue with Google</button>
+      <p class="muted" style="margin-top:16px">By continuing you agree to the <a href="terms.html" target="_blank" style="color:#fff6ed">Terms</a> and <a href="privacy.html" target="_blank" style="color:#fff6ed">Privacy Policy</a>.</p>
+    </div>`;
+    $('google-signin').addEventListener('click', () => { location.href = '/api/auth/google'; });
+    return;
+  }
+  let gens, orders;
+  if (server) { const j = await api('/generations'); gens = j.generations; orders = j.orders; }
+  else { gens = (await dbBy('gens', user.email)).sort((a, c) => c.ts - a.ts); orders = (await dbBy('orders', user.email)).sort((a, c) => c.ts - a.ts); }
+  b.innerHTML = `<div class="row between"><div><div class="big">${esc(user.name)}</div><div class="muted">${esc(user.email)}</div></div><div class="credit-box"><b>${user.credits}</b>credits</div></div>
+    <div class="btn-row"><button class="pill" id="a-buy">Buy credits</button><button class="pill ghost" id="a-out">Sign out</button></div>
+    <h4 class="sub">My generations (${gens.length})</h4>
+    <div class="gallery">${gens.map((g) => `<div class="gcard"><img src="${g.after}" data-v="${g.id}" alt=""><div class="gmeta"><b>${esc(g.style)}</b><small>${new Date(g.ts).toLocaleDateString()} · ${esc(g.provider)}</small></div><button class="x-btn" data-d="${g.id}">✕</button></div>`).join('') || '<p class="muted">No generations yet — upload a room and press Synthesize.</p>'}</div>
+    <h4 class="sub">Payments</h4>${orders.map((o) => `<div class="ordr">${new Date(o.ts).toLocaleDateString()} · ${esc(PLANS[o.plan].n)} · +${o.credits} credits · $${o.amount} · ${esc(o.mode)}</div>`).join('') || '<p class="muted">No payments yet.</p>'}`;
+  $('a-buy').onclick = () => { closeM('m-account'); refreshPayMode(); openM('m-pricing'); };
+  $('a-out').onclick = () => { if (server) api('/logout', 'POST').catch(() => {}); user = null; try { localStorage.removeItem('maestro_session'); } catch (x) {} updateUI(); renderAccount(); toast('Signed out'); };
+  b.onclick = async (e) => {
+    const v = e.target.closest('[data-v]'), d = e.target.closest('[data-d]');
+    if (v) { const g = gens.find((x) => x.id === v.dataset.v); renderedUrl = g.after; $('rendered-output-img').src = g.after; showPair(g.before, g.after); $('render-style-title').innerHTML = `Style: ${esc(g.style)}<span>${esc(g.cat)} • from your gallery</span>`; closeM('m-account'); scrollP(3); }
+    if (d) { if (server) await api('/generations/' + d.dataset.d, 'DELETE'); else await dbDel('gens', d.dataset.d); renderAccount(); }
+  };
+}
+
+/* ---------- payments ---------- */
+const hasStripe = () => Object.values(cfg.stripe).some(Boolean);
+function refreshPayMode() { if (server) { $('pay-mode').textContent = 'Secure checkout by Paddle. Credits are added after the payment is verified.'; return; } $('pay-mode').textContent = hasStripe() ? 'Secure checkout by Stripe. Credits are added to your account after payment.' : 'Test checkout is active — add Stripe Payment Links in AI Config to accept real payments.'; }
+document.querySelectorAll('[data-plan]').forEach((b) => b.addEventListener('click', () => buy(b.dataset.plan)));
+function buy(plan) {
+  if (!user) { toast('Continue with Google before buying a package'); closeM('m-pricing'); openAccount(); return; }
+  if (server) { api('/checkout', 'POST', { plan }).then((j) => { location.href = j.url; }).catch((e) => toast(e.message)); return; }
+  const link = cfg.stripe[plan];
+  if (link) {
+    const u = link + (link.includes('?') ? '&' : '?') + 'client_reference_id=' + encodeURIComponent(user.email) + '&prefilled_email=' + encodeURIComponent(user.email);
+    window.open(u, '_blank'); toast('Complete payment in the Stripe tab, then return here'); return;
+  }
+  const p = PLANS[plan]; $('pay-sum').textContent = `${p.n} · ${p.c} credits · $${p.p}`; $('pay-form').dataset.plan = plan;
+  $('pay-err').textContent = ''; $('pay-btn').textContent = `Pay $${p.p} (test)`; closeM('m-pricing'); openM('m-pay');
+}
+$('cc').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim(); });
+$('cexp').addEventListener('input', (e) => { let v = e.target.value.replace(/\D/g, '').slice(0, 4); if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2); e.target.value = v; });
+const luhn = (n) => { let s = 0, alt = false; for (let i = n.length - 1; i >= 0; i--) { let d = +n[i]; if (alt) { d *= 2; if (d > 9) d -= 9; } s += d; alt = !alt; } return s % 10 === 0; };
+async function grant(plan, id, mode) {
+  const p = PLANS[plan]; if (!p || !user) return false;
+  if (await dbGet('orders', id)) return false;
+  user.credits += p.c; await dbPut('users', user);
+  await dbPut('orders', { id, uid: user.email, plan, credits: p.c, amount: p.p, mode, ts: Date.now() });
+  updateUI(); return true;
+}
+$('pay-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const num = $('cc').value.replace(/\s/g, ''), ex = $('cexp').value.match(/^(\d\d)\/(\d\d)$/);
+  if (num.length < 13 || !luhn(num)) { $('pay-err').textContent = 'Invalid card number'; return; }
+  if (!ex || +ex[1] < 1 || +ex[1] > 12) { $('pay-err').textContent = 'Invalid expiry date'; return; }
+  if ($('ccvc').value.length < 3) { $('pay-err').textContent = 'Invalid CVC'; return; }
+  $('pay-btn').textContent = 'Processing…';
+  await new Promise((r) => setTimeout(r, 1400));
+  const plan = e.target.dataset.plan; await grant(plan, 'o' + Date.now(), 'test');
+  closeM('m-pay'); e.target.reset(); toast(`+${PLANS[plan].c} credits added`);
+});
+
+/* ---------- AI & payments config ---------- */
+$('btn-api').addEventListener('click', () => {
+  $('api-provider').value = cfg.provider; $('api-token').value = cfg.token; $('api-endpoint').value = cfg.endpoint;
+  $('api-range').value = cfg.strength; $('api-range-val').textContent = `Strict (${cfg.strength}%)`;
+  ['starter', 'pro', 'studio'].forEach((k) => ($('st-' + k).value = cfg.stripe[k]));
+  openM('api-modal');
+});
+$('api-range').addEventListener('input', (e) => { $('api-range-val').textContent = `Strict (${e.target.value}%)`; });
+$('api-save').addEventListener('click', () => {
+  cfg.provider = $('api-provider').value; cfg.token = $('api-token').value.trim(); cfg.endpoint = $('api-endpoint').value.trim(); cfg.strength = +$('api-range').value;
+  ['starter', 'pro', 'studio'].forEach((k) => (cfg.stripe[k] = $('st-' + k).value.trim()));
+  saveCfg(); closeM('api-modal'); toast('Settings saved');
+});
+
+/* ---------- init ---------- */
+async function initApp() {
+  renderTabs(); renderStyles(); selectStyle(activeStyle);
+  if (location.protocol.startsWith('http')) {
+    try {
+      const h = await fetch('/api/health');
+      if (h.ok) {
+        server = true; $('btn-api').style.display = 'none';
+        const refresh = async () => { try { user = (await api('/me')).user; } catch (e) { user = null; } updateUI(); };
+        await refresh();
+        const params = new URLSearchParams(location.search);
+        if (params.has('checkout')) { history.replaceState(null, '', location.pathname); toast('Checking your payment status…'); setTimeout(refresh, 2500); setTimeout(refresh, 6000); }
+        return;
+      }
+    } catch (e) {}
+    // A hosted website must never silently fall back to fake local renders or test payments.
+    server = true;
+    $('btn-api').style.display = 'none';
+    toast('Maestro server is not responding. Please refresh or contact support.');
+    updateUI();
+    return;
+  }
+  try {
+    const em = localStorage.getItem('maestro_session');
+    if (em) { user = (await dbGet('users', em)) || null; }
+    const q = new URLSearchParams(location.search), plan = q.get('paid');
+    if (plan && PLANS[plan]) {
+      if (user) { if (await grant(plan, q.get('sid') || 'o' + Date.now(), 'stripe')) toast(`Payment received · +${PLANS[plan].c} credits`); history.replaceState(null, '', location.pathname); }
+      else toast('Sign in to receive your purchased credits');
+    }
+  } catch (e) { console.warn('Database unavailable', e); }
+  updateUI();
+}
+
+/* ---------- bootstrap ---------- */
+let booted = false;
+function boot() {
+  if (booted) return; booted = true;
+  splitTitlesIntoChars(); initScene(); onWindowResize(); animate(); setupNavigation(); initApp();
+}
+if (document.readyState === 'loading') addEventListener('DOMContentLoaded', boot); else boot();
+</script>
+
+ 
+
+
+<style>
+.maestro-credit{position:fixed;right:18px;bottom:12px;z-index:20;font:400 9px/1.2 Outfit, sans-serif;letter-spacing:1.7px;text-transform:uppercase;color:rgba(205,177,130,.48);pointer-events:none;user-select:none}
+@media(max-width:600px){.maestro-credit{right:10px;bottom:8px;font-size:8px;letter-spacing:1.2px}}
+</style>
+<div class="maestro-credit" aria-label="Created by Aliyev">Created by Aliyev</div>
+
+</body>
+</html>
